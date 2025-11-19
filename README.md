@@ -1,34 +1,125 @@
-# Multi-Stage Hybrid CNN-ViT for Chest X-Ray Classification
+# 📘 Multi-Stage Hybrid CNN-ViT for Chest X-Ray Classification
 
-This repository implements a deep learning pipeline for classifying Chest X-Ray images into three categories: **Effusion**, **Infiltration**, and **No Finding**.
+This repository implements a deep learning pipeline to classify Chest X-Ray (CXR) images into **Effusion**, **Infiltration**, and **No Finding**.
 
-The project utilizes a **Hybrid Architecture** combining **DenseNet121** (for feature extraction) and a **Vision Transformer (ViT)** (for global attention), employed within a **Hierarchical Inference Strategy** to maximize accuracy on difficult-to-distinguish classes.
+The project uses a **Hybrid CNN-Transformer Architecture** (DenseNet121 + ViT) along with a **two-stage hierarchical inference strategy**, improving performance on visually similar thoracic conditions.
 
-## 📂 Repository Content
+---
 
-- **`Main.ipynb`**: The complete Jupyter Notebook containing data preprocessing, model architecture definition, training loops (Stage 1 & 2), and evaluation.
-- **`stage1_best_state.pth`**: Model weights for the 3-class hybrid classifier.
-- **`stage2_best_state.pth`**: Model weights for the specialized binary classifier (Infiltration vs. No Finding).
+## 📂 Repository Contents
 
-## 🧠 Model Architecture
+| File | Description |
+|------|-------------|
+| `Main.ipynb` | Full notebook: preprocessing, models, training (Stage 1 & 2), evaluation |
+| `stage1_best_state.pth` | Trained weights for 3-class hybrid model |
+| `stage2_best_state.pth` | Trained weights for binary (Infiltration vs No Finding) model |
 
-The core model is a **CNN-ViT Hybrid**:
-1.  **CNN Backbone:** `DenseNet121` (pretrained on ImageNet) is used to extract local spatial features.
-2.  **Projection:** CNN features are flattened and projected to an embedding dimension.
-3.  **Transformer:** A standard `TransformerEncoder` applies self-attention mechanisms to capture global dependencies in the X-ray.
-4.  **Classifier:** A final Multi-Layer Perceptron (MLP) head for prediction.
+---
 
-## ⚙️ Hierarchical Inference Strategy
+## 🧠 Model Overview
 
-To improve performance, the model does not rely on a single pass. Instead, it uses a two-stage decision process:
+### 🔷 Hybrid CNN-ViT Architecture
 
-1.  **Stage 1 (General Classification):** The image is passed through the 3-class Hybrid Model.
-2.  **Stage 2 (Refinement):** * If Stage 1 predicts **Effusion**, the prediction is accepted.
-    * If Stage 1 predicts **Infiltration** or **No Finding** (which are often visually similar), the image is passed to a specialized **Binary Hybrid Model** trained exclusively to distinguish between these two.
+1. **DenseNet121 (CNN Backbone)** — Extracts strong local spatial features.  
+2. **Projection Layer** — Converts CNN feature maps into transformer-ready embeddings.  
+3. **Transformer Encoder (ViT)** — Captures global dependencies with self-attention.  
+4. **MLP Head** — Outputs final class predictions.
+
+---
+
+## 🔁 Hierarchical Inference Strategy
 
 ```mermaid
 graph TD;
     A[Input X-Ray] --> B[Stage 1: 3-Class Hybrid Model];
-    B -- Predicts Effusion --> C[Final: Effusion];
-    B -- Predicts Infiltration/No Finding --> D[Stage 2: Binary Model];
-    D --> E[Final: Infiltration OR No Finding];
+    B -- Effusion --> C[Final Output: Effusion];
+    B -- Infiltration/No Finding --> D[Stage 2: Binary Hybrid Model];
+    D --> E[Final Output: Infiltration or No Finding];
+```
+
+**Why this works:**  
+- Effusion is visually distinct → Stage 1 handles it well.  
+- Infiltration vs No Finding are subtle → Stage 2 specializes just on these two.
+
+---
+
+## 📊 Dataset
+
+Dataset images are **not included** due to size limits.
+
+Training data was taken from the **NIH ChestX-ray14 dataset**:
+
+- **Classes used:** Effusion, Infiltration, No Finding  
+- **Balanced sampling:** 3,955 images per class  
+- **Total used:** ~11,865 X-rays  
+
+This balanced subset helps prevent class bias and improves generalization.
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Python 3.8+
+- Git LFS (required for downloading `.pth` model weights)
+
+### Installation
+
+```bash
+git lfs install
+git clone https://github.com/HarshChand-29/Multi-class-chest-xray-classification.git
+cd Multi-class-chest-xray-classification
+```
+
+Install dependencies:
+
+```bash
+pip install torch torchvision opencv-python pandas numpy scikit-learn matplotlib seaborn tqdm transformers
+```
+
+---
+
+## ▶️ Usage
+
+### 1. **Run Inference**
+Use `hierarchical_predict()` inside `Main.ipynb` to classify new images using both Stage 1 and Stage 2 models.
+
+### 2. **Retrain the Models**
+If training from scratch:
+
+1. Download NIH dataset  
+2. Filter for the 3 selected classes  
+3. Sample 3,955 images per class  
+4. Update paths in `Main.ipynb`  
+5. Run training cells  
+
+---
+
+## 🛠️ Preprocessing & Augmentation
+
+- **CLAHE** for contrast enhancement  
+- Resize → **224 × 224**  
+- Augmentations:
+  - Random Resized Crop  
+  - Horizontal Flip  
+  - Random Rotation (±10°)
+
+---
+
+## 📚 Citation
+
+If you use the NIH ChestX-ray dataset, cite:
+
+> Wang X, Peng Y, Lu L, Lu Z, Bagheri M, Summers RM. *ChestX-ray8: Hospital-scale Chest X-ray Database and Benchmarks on Weakly-Supervised Classification and Localization of Common Thorax Diseases.* IEEE CVPR 2017.
+
+---
+
+## 🤝 Contributor
+
+**Harsh** — Lead Developer
+
+---
+
+## 📄 License
+
+Open-source under the **MIT License**.
